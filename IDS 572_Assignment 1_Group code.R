@@ -128,3 +128,5 @@ library(broom)
 
 tidy(aucAll[aucAll > 0.54]) %>% View() #TO determine which variables have auc > 0.54
 tidy(aucAll[aucAll >=0.55 & aucAll < 0.59]) %>% View() #TO determine which variables have auc between 0.54 and 0.59
+
+print("can i pull")
