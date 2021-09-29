@@ -141,3 +141,17 @@ library(rpart)
 lcdf2$loan_status <- factor(lcdf2$loan_status, levels=c("Fully Paid", "Charged Off"))
 lcDT1 <- rpart(loan_status ~., data=lcdfTrn %>% select(-varsOmit), method="class", parms = list(split = "information"), control = rpart.control(minsplit = 30))
 printcp(lcDT1)
+
+lcDT1$variable.importance
+
+lcDT1 <- rpart(loan_status ~., data=lcdfTrn %>% select(-varsOmit), method="class", parms = list(split = "information"), control = rpart.control(cp=0.0001, minsplit = 50))
+
+#Do we want to prune the tree -- check for performance with different cp levels
+printcp(lcDT1)
+lcDT1p<- prune.rpart(lcDT1, cp=0.01)
+
+library(rattle)
+library(rpart.plot)
+library(RColorBrewer)
+
+fancyRpartPlot(lcDT1p, caption = NULL)
