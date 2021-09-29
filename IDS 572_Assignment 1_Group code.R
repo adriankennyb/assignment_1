@@ -141,3 +141,5 @@ library(rpart)
 lcdf2$loan_status <- factor(lcdf2$loan_status, levels=c("Fully Paid", "Charged Off"))
 lcDT1 <- rpart(loan_status ~., data=lcdfTrn %>% select(-varsOmit), method="class", parms = list(split = "information"), control = rpart.control(minsplit = 30))
 printcp(lcDT1)
+
+print("test")
