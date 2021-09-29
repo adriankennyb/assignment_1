@@ -129,4 +129,15 @@ library(broom)
 tidy(aucAll[aucAll > 0.54]) %>% View() #TO determine which variables have auc > 0.54
 tidy(aucAll[aucAll >=0.55 & aucAll < 0.59]) %>% View() #TO determine which variables have auc between 0.54 and 0.59
 
+TRNPROP = 0.5
+nr<-nrow(lcdf2)
+trnIndex<- sample(1:nr, size = round(TRNPROP * nr), replace=FALSE)
+lcdfTrn <- lcdf2[trnIndex, ]
+lcdfTst <- lcdf2[-trnIndex, ]
 
+varsOmit <- c('actualTerm', 'actualReturn', 'issue_d')
+
+library(rpart)
+lcdf2$loan_status <- factor(lcdf2$loan_status, levels=c("Fully Paid", "Charged Off"))
+lcDT1 <- rpart(loan_status ~., data=lcdfTrn %>% select(-varsOmit), method="class", parms = list(split = "information"), control = rpart.control(minsplit = 30))
+printcp(lcDT1)
