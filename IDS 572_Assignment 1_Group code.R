@@ -14,8 +14,6 @@ library(tidyr)
 glimpse(lcdf)
 summary(lcdf)
 
-print("hello group")
-
 ##Question 2I
 ##Proportion of Defaults
 lcdf %>% group_by(loan_status) %>% tally() %>% mutate(percent=n/sum(n)*100)
@@ -115,7 +113,7 @@ summary(lcx[, nm])
 lcdf<- lcdf %>% replace_na(list(mths_since_last_delinq=500, revol_util=median(lcdf$revol_util, na.rm=TRUE), bc_open_to_buy=median(lcdf$bc_open_to_buy, na.rm=TRUE), mo_sin_old_il_acct=1000, mths_since_recent_bc=1000, mths_since_recent_inq=50, num_tl_120dpd_2m = median(lcdf$num_tl_120dpd_2m, na.rm=TRUE),percent_bc_gt_75 = median(lcdf$percent_bc_gt_75, na.rm=TRUE), bc_util=median(lcdf$bc_util, na.rm=TRUE) ))
 
 ##Question 3 - Removing Leakage Variables
-lcdf2 <- lcdf %>% select(-c("loan_amnt",delinq_2yrs,inq_last_6mths,revol_bal,revol_util,total_rec_late_fee,recoveries,collection_recovery_fee,collections_12_mths_ex_med,acc_now_delinq,tot_cur_bal,tot_coll_amt,acc_open_past_24mths,avg_cur_bal,bc_open_to_buy,chargeoff_within_12_mths,delinq_amnt,mo_sin_rcnt_rev_tl_op,mo_sin_rcnt_tl,mths_since_recent_bc,mths_since_recent_inq,num_actv_bc_tl,num_actv_rev_tl,num_tl_120dpd_2m,num_tl_30dpd,num_tl_90g_dpd_24m,num_tl_op_past_12m,pct_tl_nvr_dlq))
+lcdf2 <- lcdf %>% select(-c("loan_amnt",delinq_2yrs,inq_last_6mths,revol_bal,revol_util,total_rec_late_fee,recoveries,collection_recovery_fee,collections_12_mths_ex_med,acc_now_delinq,tot_cur_bal,tot_coll_amt,acc_open_past_24mths,avg_cur_bal,bc_open_to_buy,chargeoff_within_12_mths,delinq_amnt,mo_sin_rcnt_rev_tl_op,mo_sin_rcnt_tl,mths_since_recent_bc,mths_since_recent_inq,num_actv_bc_tl,num_actv_rev_tl,num_tl_120dpd_2m,num_tl_30dpd,num_tl_90g_dpd_24m,num_tl_op_past_12m,pct_tl_nvr_dlq,term,emp_title,issue_d,pymnt_plan,purpose,zip_code,addr_state,earliest_cr_line,out_prncp,out_prncp_inv,total_pymnt,total_pymnt_inv,total_rec_prncp,total_rec_int,last_pymnt_d,last_pymnt_amnt,last_credit_pull_d,policy_code,application_type,hardship_flag,disbursement_method,debt_settlement_flag,annRet,actualTerm,actualReturn))
 View(lcdf2)
 ##Question 4 - univariate analysis
 library(pROC)
@@ -129,29 +127,31 @@ library(broom)
 tidy(aucAll[aucAll > 0.54]) %>% View() #TO determine which variables have auc > 0.54
 tidy(aucAll[aucAll >=0.55 & aucAll < 0.59]) %>% View() #TO determine which variables have auc between 0.54 and 0.59
 
-TRNPROP = 0.5
+TRNPROP = 0.7
 nr<-nrow(lcdf2)
 trnIndex<- sample(1:nr, size = round(TRNPROP * nr), replace=FALSE)
 lcdfTrn <- lcdf2[trnIndex, ]
 lcdfTst <- lcdf2[-trnIndex, ]
 
-varsOmit <- c('actualTerm', 'actualReturn', 'issue_d')
+
+
+lcdf2$emp_length <- factor(lcdf2$emp_length, levels=c("n/a", "< 1 year","1 year","2 years", "3 years" ,  "4 years",   "5 years",   "6 years",   "7 years" ,  "8 years", "9 years", "10+ years" ))
 
 library(rpart)
-lcdf2$loan_status <- factor(lcdf2$loan_status, levels=c("Fully Paid", "Charged Off"))
-lcDT1 <- rpart(loan_status ~., data=lcdfTrn %>% select(-varsOmit), method="class", parms = list(split = "information"), control = rpart.control(minsplit = 30))
-printcp(lcDT1)
+lcdfTrn$loan_status <- factor(lcdfTrn$loan_status, levels=c("Fully Paid", "Charged Off"))
 
 lcDT1$variable.importance
 
-lcDT1 <- rpart(loan_status ~., data=lcdfTrn %>% select(-varsOmit), method="class", parms = list(split = "information"), control = rpart.control(cp=0.0001, minsplit = 50))
-
+lcDT1 <- rpart(loan_status ~., data=lcdfTrn, method="class", parms = list(split = "information"), control = rpart.control(cp=0.0001, minsplit = 10))
+                                                                                                                                                                                 
 #Do we want to prune the tree -- check for performance with different cp levels
 printcp(lcDT1)
-lcDT1p<- prune.rpart(lcDT1, cp=0.01)
+lcDT1p<- prune.rpart(lcDT1, cp=0.001)
+
+printcp(lcDT1p)
+summary(lcDT1)
 
 library(rattle)
 library(rpart.plot)
 library(RColorBrewer)
 
-fancyRpartPlot(lcDT1p, caption = NULL)
